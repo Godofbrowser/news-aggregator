@@ -27,17 +27,4 @@ class NewsController extends Controller
     public function index() {
         return $this->newsAggregator->getEnabledProviders();
     }
-
-    public function chunkEnabled() {
-        return Collection::make($this->newsAggregator->getEnabledProviders())->map(function ($provider) {
-            $content = [];
-            $this->newsAggregator->withProvider($provider)
-                ->chunk(
-                    2,
-                    function(NewsFetchResult $result) use(&$content) {
-                        $content = array_merge($content, $result->getData());
-                    });
-            return [$provider, $content];
-        });
-    }
 }
