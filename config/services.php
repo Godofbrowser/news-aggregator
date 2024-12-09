@@ -31,4 +31,32 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'news' => [
+        'enabled_providers' => ['demo', 'the_guardian'],
+        'providers' => [
+            'demo' => [
+                'token' => 'example_token'
+            ],
+            'example' => [
+                'token' => 'example_token'
+            ],
+            'news_api_org' => [
+                // https://newsapi.org/
+                'key' => env('NEWSAPI_ORG_KEY')
+            ],
+            'the_guardian' => [
+                // https://open-platform.theguardian.com/access/
+                // https://open-platform.theguardian.com/documentation/search
+                // https://content.guardianapis.com/search?api-key=<>
+                'key' => env('THE_GUARDIAN')
+            ],
+            'ny_times' => [
+                // https://developer.nytimes.com/get-started
+                // https://developer.nytimes.com/my-apps
+                'key' => env('NY_TIMES_KEY'),
+                'secret' => env('NY_TIMES_SECRET')
+            ],
+        ]
+    ]
+
 ];

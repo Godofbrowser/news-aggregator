@@ -185,6 +185,7 @@ return [
         /*
          * Package Service Providers...
          */
+        App\Services\NewsAggregator\NewsAggregatorServiceProvider::class,
 
         /*
          * Application Service Providers...
