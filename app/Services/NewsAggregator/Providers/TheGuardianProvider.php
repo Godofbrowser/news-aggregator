@@ -4,7 +4,7 @@
 namespace App\Services\NewsAggregator\Providers;
 
 
-use App\Services\NewsAggregator\NewsAggregatorProviderContract;
+use App\Services\NewsAggregator\AbstractProvider;
 use App\Services\NewsAggregator\NewsFetchResult;
 use Closure;
 use GuzzleHttp\Client;
@@ -12,31 +12,12 @@ use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
-class TheGuardianProvider implements NewsAggregatorProviderContract
+class TheGuardianProvider extends AbstractProvider
 {
 
     public function getIdentifier(): string
     {
         return 'the_guardian';
-    }
-
-    /**
-     * Fetch news content from the guardian api in batches
-     *
-     * @param $batchSize
-     * @param Closure $closure
-     * @throws GuzzleException
-     * @author  Emeke Ajeh <ajemeke@gmail.com>
-     */
-    public function chunk($batchSize, Closure $closure): void {
-        $result = null;
-        while (true) {
-            $result = $this->fetchNews($result ? $result->getPage() + 1 : 1, $batchSize);
-            call_user_func($closure, $result);
-            logger([$result, $result->hasNextPage(), $result->getPage()]);
-            if (!$result->hasNextPage() || $result->getPage() >= 5) break;
-            sleep(0.2);
-        }
     }
 
     /**

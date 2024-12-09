@@ -4,27 +4,17 @@
 namespace App\Services\NewsAggregator;
 
 
-use App\Services\NewsAggregator\Providers\TheGuardianProvider;
 use Illuminate\Contracts\Container\BindingResolutionException;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
+use ReflectionClass;
+use Symfony\Component\Finder\Finder;
 
 class NewsAggregatorServiceProvider extends ServiceProvider implements DeferrableProvider
 {
-    private array $providers = [
-        TheGuardianProvider::class,
-        // NewsAPIProvider::class,
-        // OpenNewsProvider::class,
-        // NewsCredProvider::class,
-        // TheGuardianProvider::class,
-        // NYTimesProvider::class,
-        // BBCNewsProvider::class,
-        // NewsAPIOrgProvider::class,
-    ];
-
     /**
      * Register News Aggregator services.
      *
@@ -36,19 +26,50 @@ class NewsAggregatorServiceProvider extends ServiceProvider implements Deferrabl
             NewsAggregatorContract::class,
             NewsAggregatorService::class
         );
+        $this->loadProviders();
     }
 
-    public function boot(Application $app): void {
-        Collection::make($this->providers)->each(function ($class) use($app) {
+    public function boot(): void {
+        $this->loadProviders();
+    }
+
+    private function registerProvider(string $provider): void {
+       try {
+           $service = $this->app->make(NewsAggregatorContract::class);
+           /** @var NewsAggregatorProviderContract $instance */
+           $instance = $this->app->make($provider);
+           $service->registerProvider($instance->getIdentifier(), $instance);
+       } catch (BindingResolutionException $e) {
+           Log::debug($e->getMessage(), [$e]);
+       }
+    }
+
+
+    /**
+     * Register all of the Providers in the /Providers directory.
+     *
+     * @return void
+     */
+    private function loadProviders()
+    {
+        $namespace = $this->app->getNamespace();
+
+        foreach ((new Finder)->in(__DIR__.'/Providers')->files() as $provider) {
+            $provider = $namespace.str_replace(
+                    ['/', '.php'],
+                    ['\\', ''],
+                    Str::after($provider->getRealPath(), realpath(app_path()).DIRECTORY_SEPARATOR)
+                );
+
             try {
-                $service = $app->make(NewsAggregatorContract::class);
-                /** @var NewsAggregatorProviderContract $instance */
-                $instance = $app->make($class);
-                $service->registerProvider($instance->getIdentifier(), $instance);
-            } catch (BindingResolutionException $e) {
-                Log::debug($e->getMessage(), [$e]);
+                if (is_subclass_of($provider, AbstractProvider::class) &&
+                    !(new ReflectionClass($provider))->isAbstract()) {
+                    $this->registerProvider($provider);
+                }
+            } catch (\ReflectionException $e) {
+                Log::error($e->getMessage(), [$e]);
             }
-        });
+        }
     }
 
     /**
