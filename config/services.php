@@ -32,14 +32,9 @@ return [
     ],
 
     'news' => [
-        'enabled_providers' => ['demo', 'the_guardian'],
+        'enabled_providers' => ['the_guardian', 'news_api_org', 'ny_times'],
+//        'enabled_providers' => ['ny_times'],
         'providers' => [
-            'demo' => [
-                'token' => 'example_token'
-            ],
-            'example' => [
-                'token' => 'example_token'
-            ],
             'news_api_org' => [
                 // https://newsapi.org/
                 'key' => env('NEWSAPI_ORG_KEY')

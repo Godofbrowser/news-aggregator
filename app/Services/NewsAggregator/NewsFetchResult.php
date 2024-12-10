@@ -6,17 +6,10 @@ class NewsFetchResult
 {
     /**
      * The news result data
-     * - title
-     * - source
-     * - date
-     * - category
-     * - author
-     * - -
-     * - thumbnail
-     * - url
-     * @var mixed
+     *
+     * @var NewsFetchResultData[]
      */
-    private $data;
+    private array $data;
 
     /**
      * @var int
@@ -40,7 +33,7 @@ class NewsFetchResult
      * @param $per_page
      * @param $total_page
      */
-    public function __construct($data, $page, $per_page, $total_page)
+    public function __construct(array $data, int $page, int $per_page, int $total_page)
     {
         $this->data = $data;
         $this->page = $page;
@@ -52,7 +45,7 @@ class NewsFetchResult
         return $this->page;
     }
 
-    public function getData(): mixed {
+    public function getData() {
         return $this->data;
     }
 

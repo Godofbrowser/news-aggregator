@@ -14,16 +14,16 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 
-class TheGuardianProvider extends AbstractProvider
+class NYTimesProvider extends AbstractProvider
 {
 
     public function getIdentifier(): string
     {
-        return 'the_guardian';
+        return 'ny_times';
     }
 
     /**
-     * Fetch news content from the guardian api
+     * Fetch news content from the ny-times api
      * Docs - https://open-platform.theguardian.com/documentation
      *
      * @param int|null $page
@@ -35,9 +35,8 @@ class TheGuardianProvider extends AbstractProvider
     public function fetchNews(?int $page, ?int $per_page): NewsFetchResult
     {
         try {
-            $data = $this->request('GET', 'search', [
+            $data = $this->request('GET', 'articlesearch.json', [
                 'query' => [
-                    'lang' => 'en',
                     'page-size' => min(50, $per_page),
                     'page' => $page,
                 ]
@@ -52,33 +51,38 @@ class TheGuardianProvider extends AbstractProvider
     }
 
     private function transformFetchNewsResult($data, $page, $per_page): NewsFetchResult {
-        if ($data['response']['status'] !== 'ok') {
+        if ($data['status'] !== 'OK') {
             return new NewsFetchResult([], $page, $per_page, $page);
         }
 
-        $newsData = Collection::make($data['response']['results'])->map(function ($responseData) {
+        $totalResults = $data['response']['meta']['hits'];
+        // Todo: how to change page size? API is missing
+        $per_page = 10; // override
+        $totalPages = intval(ceil($totalResults / $per_page));
+
+        $newsData = Collection::make($data['response']['docs'])->map(function ($responseData) {
             $resultData = new NewsFetchResultData();
             $resultData->provider = $this->getIdentifier();
-            $resultData->provider_id = $responseData['id'];
-            $resultData->category_name = $responseData['sectionName'];
-            $resultData->link = $responseData['webUrl'];
-            $resultData->thumbnail = $responseData['fields']['thumbnail'];
-            $resultData->headline = $responseData['webTitle'];
-            $resultData->body = $responseData['fields']['body'];
-            $resultData->published_at = Carbon::parse($responseData['webPublicationDate']);
+            $resultData->provider_id = $responseData['_id'];
+            $resultData->category_name = $responseData['section_name'];
+            $resultData->link = $responseData['web_url'];
+            $resultData->thumbnail = sprintf('https://www.nytimes.com/%s', $responseData['multimedia'][0]['url']);
+            $resultData->headline = $responseData['headline']['main'];
+            $resultData->body = $responseData['abstract']; // todo: we need full content
+            $resultData->published_at = Carbon::parse($responseData['pub_date']);
             return $resultData;
         });
 
         return new NewsFetchResult(
             $newsData->toArray(),
-            $data['response']['currentPage'],
-            $data['response']['pageSize'],
-            $data['response']['pages'],
+            $page,
+            $per_page,
+            $totalPages,
         );
     }
 
     /**
-     * Make an authorized request to the guardian api
+     * Make an authorized request to the NYTimes api
      *
      * @param $method
      * @param $endpoint
@@ -89,14 +93,12 @@ class TheGuardianProvider extends AbstractProvider
      */
     private function request($method, $endpoint, $options): array {
         $client = new Client([
-            'base_uri' => 'https://content.guardianapis.com/',
+            'base_uri' => 'https://api.nytimes.com/svc/search/v2/',
             'timeout' => 5.0,
         ]);
 
         $baseQueryParams = [
-            'api-key' => Config::get('services.news.providers.the_guardian.key'),
-            'show-fields' => implode(',', ['thumbnail', 'body']),
-            'show-references' => implode(',', ['author']),
+            'api-key' => Config::get('services.news.providers.ny_times.key'),
         ];
 
         $baseOptions = [
