@@ -45,12 +45,13 @@ class ScrapNews extends Command
         // If batch size is greater than the provider's limit,
         // it will fallback to min for the platform
         $batchSize = 20;
+        $pageLimit = 10; // Let's not go beyound 20 pages for this testing purpose
 
         $this->comment('Scrapping started...');
         $this->comment(sprintf('Available providers: [%s]', implode(', ', $newsAggregator->getProviders())));
         $this->comment(sprintf('Enabled providers: [%s]', implode(', ', $newsAggregator->getEnabledProviders())));
 
-        Collection::make($newsAggregator->getEnabledProviders())->each(function ($provider) use($newsAggregator, $batchSize) {
+        Collection::make($newsAggregator->getEnabledProviders())->each(function ($provider) use($newsAggregator, $batchSize, $pageLimit) {
             $this->comment(sprintf('provider [%s] started', $provider));
             $contentCount = 0;
             $newsAggregator->withProvider($provider)
@@ -61,7 +62,8 @@ class ScrapNews extends Command
                         $contentCount += count($content);
                         $this->persistContent($content);
                         $this->comment(sprintf('provider [%s] batched. Page: %s', $provider, $result->getPage()));
-                    }
+                    },
+                    $pageLimit,
                 );
 //            Log::debug('Content: ', [$content]);
 //            Cache::put('news_data', $content, now()->addMinutes(60));

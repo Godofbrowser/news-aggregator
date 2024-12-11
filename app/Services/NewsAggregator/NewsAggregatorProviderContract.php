@@ -16,7 +16,8 @@ interface NewsAggregatorProviderContract
      *
      * @param $batchSize
      * @param Closure $closure
+     * @param int $pageLimit
      * @author  Emeke Ajeh <ajemeke@gmail.com>
      */
-    public function chunk($batchSize, Closure $closure): void;
+    public function chunk($batchSize, Closure $closure, int $pageLimit): void;
 }
