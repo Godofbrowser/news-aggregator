@@ -25,6 +25,7 @@ class NewsController extends Controller
 
     public function getFeed(FilterArticlesRequest $request) {
         $query = Article::query();
+        $authUser = $request->user(); // Todo:: use the user's preference for relevancy
 
         if ($category = $request->query('category')) {
             $query = $query->where('category_id', $category);
@@ -33,8 +34,12 @@ class NewsController extends Controller
             $query = $query->where('provider', $source);
         }
         if ($sort = $request->query('sortBy')) {
-            if ($sort = 'latest') $query = $query->orderBy('published_at', 'desc');
-            else $query = $query->inRandomOrder(); // Todo: use user's preference
+            if ($sort === 'latest') {
+                $query = $query->orderBy('published_at', 'desc');
+            }
+            else {
+                $query = $query->inRandomOrder(); // Todo: use user's preference
+            }
         }
         if ($search = $request->query('query')) {
             $query = $query->where('headline', 'like', "%$search%")
