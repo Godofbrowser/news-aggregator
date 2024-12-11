@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Models\Article;
-use App\Models\Models\Category;
+use App\Models\Article;
+use App\Models\Category;
 use App\Services\NewsAggregator\NewsAggregatorContract;
 use App\Services\NewsAggregator\NewsFetchResult;
 use Illuminate\Console\Command;
