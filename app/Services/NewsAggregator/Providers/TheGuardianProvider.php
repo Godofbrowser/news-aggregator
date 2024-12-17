@@ -9,6 +9,7 @@ use App\Services\NewsAggregator\NewsFetchResult;
 use App\Services\NewsAggregator\NewsFetchResultData;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
@@ -52,28 +53,28 @@ class TheGuardianProvider extends AbstractProvider
     }
 
     private function transformFetchNewsResult($data, $page, $per_page): NewsFetchResult {
-        if ($data['response']['status'] !== 'ok') {
+        if (Arr::get($data, 'response.status') !== 'ok') {
             return new NewsFetchResult([], $page, $per_page, $page);
         }
 
-        $newsData = Collection::make($data['response']['results'])->map(function ($responseData) {
+        $newsData = Collection::make(Arr::get($data, 'response.results'))->map(function ($responseData) {
             $resultData = new NewsFetchResultData();
             $resultData->provider = $this->getIdentifier();
             $resultData->provider_id = $responseData['id'];
             $resultData->category_name = $responseData['sectionName'];
             $resultData->link = $responseData['webUrl'];
-            $resultData->thumbnail = $responseData['fields']['thumbnail'];
+            $resultData->thumbnail = Arr::get($responseData, 'fields.thumbnail');
             $resultData->headline = $responseData['webTitle'];
-            $resultData->body = $responseData['fields']['body'];
+            $resultData->body = Arr::get($responseData, 'fields.body');
             $resultData->published_at = Carbon::parse($responseData['webPublicationDate']);
             return $resultData;
         });
 
         return new NewsFetchResult(
             $newsData->toArray(),
-            $data['response']['currentPage'],
-            $data['response']['pageSize'],
-            $data['response']['pages'],
+            Arr::get($data, 'response.currentPage'),
+            Arr::get($data, 'response.pageSize'),
+            Arr::get($data, 'response.pages'),
         );
     }
 
